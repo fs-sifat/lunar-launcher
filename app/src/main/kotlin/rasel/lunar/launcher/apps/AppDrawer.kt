@@ -75,34 +75,7 @@ internal class AppDrawer : Fragment() {
         private val numberPattern = Pattern.compile("[0-9]")
         private val alphabetPattern = Pattern.compile("[A-Z]")
         @JvmStatic var settingsPrefs: SharedPreferences? = null
-        @JvmStatic var alphabetList = mutableListOf<String>()
         @JvmStatic var letterPreview: MaterialTextView? = null
-
-        fun listenScroll(letter: String) {
-            packageList.clear()
-            for (resolver in packageInfoList) {
-                val appName = resolver.loadLabel(packageManager).toString()
-                when {
-                    letter == "#" -> {
-                        if (numberPattern.matcher(appName.first().uppercase()).matches()) {
-                            packageList.add(Packages(resolver.activityInfo.packageName, appName))
-                        }
-                    }
-                    alphabetPattern.matcher(letter).matches() -> {
-                        if (appName.first().uppercase() == letter) {
-                            packageList.add(Packages(resolver.activityInfo.packageName, appName))
-                        }
-                    }
-                    letter == "⠶" -> {
-                        if (!numberPattern.matcher(appName.first().uppercase()).matches() &&
-                            !alphabetPattern.matcher(appName.first().uppercase()).matches()) {
-                            packageList.add(Packages(resolver.activityInfo.packageName, appName))
-                        }
-                    }
-                }
-            }
-            appsAdapter?.updateData(packageList)
-        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -143,6 +116,35 @@ internal class AppDrawer : Fragment() {
                 true -> closeSearch()
                 false -> openSearch()
             }
+        }
+
+        binding.alphabets.setOnItemSelected {
+                packageList.clear()
+                for (resolver in packageInfoList) {
+                    val appName = resolver.loadLabel(packageManager).toString()
+                    when {
+                        it == "∑" -> {
+                            packageList.add(Packages(resolver.activityInfo.packageName, appName))
+                        }
+                        it == "#" -> {
+                            if (numberPattern.matcher(appName.first().uppercase()).matches()) {
+                                packageList.add(Packages(resolver.activityInfo.packageName, appName))
+                            }
+                        }
+                        alphabetPattern.matcher(it).matches() -> {
+                            if (appName.first().uppercase() == it) {
+                                packageList.add(Packages(resolver.activityInfo.packageName, appName))
+                            }
+                        }
+                        it == "⠶" -> {
+                            if (!numberPattern.matcher(appName.first().uppercase()).matches() &&
+                                !alphabetPattern.matcher(appName.first().uppercase()).matches()) {
+                                packageList.add(Packages(resolver.activityInfo.packageName, appName))
+                            }
+                        }
+                    }
+                }
+                appsAdapter?.updateData(packageList)
         }
 
         binding.searchInput.doOnTextChanged { inputText, _, _, _ ->
@@ -218,20 +220,24 @@ internal class AppDrawer : Fragment() {
             else {
                 binding.alphabets.apply {
                     if (visibility == GONE) visibility = VISIBLE
-                    updateLayoutParams { this.height = height }
                 }
-                alphabetList.clear()
+
+                val packageSet = mutableSetOf<String>()
+                packageSet.add("∑")
+
                 for (mPackage in packageList) {
                     mPackage.appName.first().uppercase().let { firstLetter: String ->
                         when {
-                            numberPattern.matcher(firstLetter).matches() -> alphabetList.add(0, "#")
-                            alphabetPattern.matcher(firstLetter).matches() -> alphabetList.add(firstLetter)
+                            numberPattern.matcher(firstLetter).matches() -> packageSet.add("#")
+                            alphabetPattern.matcher(firstLetter).matches() -> packageSet.add(firstLetter)
                             !numberPattern.matcher(firstLetter).matches() &&
-                                    !alphabetPattern.matcher(firstLetter).matches() -> alphabetList.add(alphabetList.size,"⠶")
+                                    !alphabetPattern.matcher(firstLetter).matches() -> packageSet.add("⠶")
                             else -> {}
                         }
                     }
                 }
+                binding.alphabets.clearItem()
+                binding.alphabets.addItem(packageSet.toList())
                 binding.alphabets.invalidate()
             }
         }

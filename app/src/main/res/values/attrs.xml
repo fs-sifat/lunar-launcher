@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="AlphabetScrollbar">
+        <attr name="item" format="string"/>
+
+        <attr name="defaultItemColor" format="color"/>
+        <attr name="selectedItemColor" format="color"/>
+
+        <attr name="defaultItemSize" format="dimension"/>
+        <attr name="selectedItemSize" format="dimension"/>
+
+        <attr name="paddingInBetween" format="dimension"/>
+    </declare-styleable>
+
+</resources>

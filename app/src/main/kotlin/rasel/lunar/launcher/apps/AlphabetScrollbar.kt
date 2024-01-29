@@ -18,62 +18,114 @@
 
 package rasel.lunar.launcher.apps
 
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Rect
 import android.util.AttributeSet
-import android.util.TypedValue
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import androidx.core.content.ContextCompat
-import rasel.lunar.launcher.apps.AppDrawer.Companion.alphabetList
+import rasel.lunar.launcher.R
 import rasel.lunar.launcher.apps.AppDrawer.Companion.letterPreview
-import rasel.lunar.launcher.apps.AppDrawer.Companion.listenScroll
-import rasel.lunar.launcher.apps.AppDrawer.Companion.settingsPrefs
-import rasel.lunar.launcher.apps.AppsAdapter.Companion.appsSize
-import rasel.lunar.launcher.helpers.Constants
+import kotlin.math.roundToInt
+internal class AlphabetScrollbar @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val itemList = mutableListOf<String>()
 
+    private var bounds = Rect()
+    private var itemHeight : Int
+    private var itemWidth : Int
 
-internal class AlphabetScrollbar : View {
+    private var selectedIndex : Int
 
-    private var paint: Paint? = null
-    private var selectedIndex = -1
-    private val alphabet get() = alphabetList.distinct()
+    var defaultItemColor : Int
+    var selectedItemColor : Int
 
-    constructor(context: Context?) : super(context) {
-        init()
+    var defaultItemSize : Int
+    var selectedItemSize : Int
+
+    var paddingInBetween : Int
+
+    fun interface OnItemSelectedListener {
+        fun onItemSelected(it : String)
     }
+    private var onItemSelectedListener : OnItemSelectedListener? = null
 
-    constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) {
-        init()
-    }
 
-    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        init()
-    }
+    init {
+        val typedArray = context.obtainStyledAttributes(attrs, R.styleable.AlphabetScrollbar)
 
-    @SuppressLint("ResourceType")
-    private fun init() {
-        paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = defaultTextColor
-            textSize = 16f
+        itemList.addAll((typedArray.getString(R.styleable.AlphabetScrollbar_item) ?: "").split(','))
+
+        defaultItemColor = typedArray.getColor(R.styleable.AlphabetScrollbar_defaultItemColor, Color.GRAY)
+        selectedItemColor = typedArray.getColor(R.styleable.AlphabetScrollbar_selectedItemColor, Color.WHITE)
+
+        defaultItemSize = typedArray.getDimensionPixelOffset(R.styleable.AlphabetScrollbar_defaultItemSize, 16)
+        selectedItemSize = typedArray.getDimensionPixelOffset(R.styleable.AlphabetScrollbar_selectedItemSize, 20)
+
+        paddingInBetween = typedArray.getDimensionPixelOffset(R.styleable.AlphabetScrollbar_paddingInBetween, 10)
+
+        typedArray.recycle()
+
+        itemHeight = 0
+        itemWidth = 0
+
+        paint.textSize = selectedItemSize.toFloat()
+
+        for (item in itemList) {
+            paint.getTextBounds(item, 0, item.length, bounds)
+            itemHeight = maxOf(itemHeight, bounds.height())
+            itemWidth = maxOf(itemWidth, bounds.width())
         }
+
+        selectedIndex = -1
+    }
+
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        setMeasuredDimension(
+            if (MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY) {
+                MeasureSpec.getSize(widthMeasureSpec)
+            } else {
+                paddingRight + itemWidth + paddingLeft
+            },
+
+            if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY) {
+                MeasureSpec.getSize(heightMeasureSpec)
+            } else {
+                paddingTop + (itemHeight * itemList.size + paddingInBetween * (itemList.size - 1)) + paddingBottom
+            }
+        )
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val width = width
-        val height = height
-        val letterHeight: Int = height / alphabet.count()
-        alphabet.indices.forEach { i: Int ->
-            val x = width / 2f - paint!!.measureText(alphabet[i]) / 2f
-            val y = i * letterHeight + letterHeight / 2f
-            when (i) {
-                selectedIndex -> paint!!.textSize = 20f
-                else -> paint!!.textSize = 16f
+
+        var yA = paddingTop.toFloat()
+
+        itemList.indices.forEach {
+            when(it) {
+                selectedIndex -> {
+                    paint.color = selectedItemColor
+                    paint.textSize = selectedItemSize.toFloat()
+                }
+                else -> {
+                    paint.color = defaultItemColor
+                    paint.textSize = defaultItemSize.toFloat()
+                }
             }
-            canvas.drawText(alphabet[i], x, y, paint!!)
+            paint.getTextBounds(itemList[it], 0, itemList[it].length, bounds)
+
+            val x = width.toFloat() / 2f - bounds.width().toFloat() / 2f
+            val y = yA + bounds.height()
+
+            canvas.drawText(itemList[it], x, y, paint)
+
+            yA += itemHeight.toFloat() + paddingInBetween.toFloat()
         }
     }
 
@@ -81,38 +133,51 @@ internal class AlphabetScrollbar : View {
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                val y = event.y
-                val index = (y / height * alphabet.count()).toInt()
-                if (index != selectedIndex) {
-                    selectedIndex = index
-                    invalidate()
+                val y = event.y - paddingTop
+
+                var index = (y / (itemHeight + paddingInBetween)).toInt()
+
+                if (index < 0) {
+                    index = 0
+                } else if (index >= itemList.size) {
+                    index = itemList.size - 1
                 }
 
-                if (!settingsPrefs!!.getBoolean(Constants.KEY_APPS_COUNT, true)) letterPreview?.visibility = VISIBLE
-                try { letterPreview?.text = alphabet[selectedIndex] }
-                catch (exception: Exception) { exception.printStackTrace() }
+                if (index != selectedIndex) {
+                    selectedIndex = index
+                    Log.d("", "$selectedIndex, $y")
+                    invalidate()
+                    letterPreview?.text = itemList[selectedIndex]
+                }
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                when {
-                    selectedIndex < 0 -> listenScroll(alphabet[0])
-                    selectedIndex > alphabet.count() - 1 -> listenScroll(alphabet[alphabet.count() - 1])
-                    else -> listenScroll(alphabet[selectedIndex])
-                }
-
-                selectedIndex = -1
+                onItemSelectedListener?.onItemSelected(itemList[selectedIndex])
                 invalidate()
-                if (settingsPrefs!!.getBoolean(Constants.KEY_APPS_COUNT, true)) letterPreview?.text = appsSize.toString()
-                else letterPreview?.visibility = GONE
+                selectedIndex = -1
             }
         }
         return true
     }
 
-    private val defaultTextColor: Int get() {
-        val resolvedAttr = TypedValue()
-        context.theme.resolveAttribute(android.R.attr.textColorPrimary, resolvedAttr, true)
-        val colorRes = resolvedAttr.run { if (resourceId != 0) resourceId else data }
-        return ContextCompat.getColor(context, colorRes)
+
+    fun addItem(items : List<String>) {
+        for (item in items) {
+            paint.getTextBounds(item, 0, item.length, bounds)
+            itemHeight = maxOf(itemHeight, bounds.height())
+            itemWidth = maxOf(itemWidth, bounds.width())
+        }
+
+        itemList.addAll(items)
+        requestLayout()
+    }
+
+    fun clearItem() {
+        itemList.clear()
+        requestLayout()
+    }
+
+    fun setOnItemSelected(isl : OnItemSelectedListener) {
+        onItemSelectedListener = isl
     }
 }

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -31,44 +30,49 @@
 
     <rasel.lunar.launcher.apps.AlphabetScrollbar
         android:id="@+id/alphabets"
-        android:layout_width="@dimen/zero"
-        android:layout_height="@dimen/zero"
-        android:layout_marginBottom="@dimen/four"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:padding="14dp"
+        app:defaultItemSize="10sp"
+        app:item="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z"
         app:layout_constraintBottom_toTopOf="@+id/reset"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/reset"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:paddingInBetween="8dp"
+        app:selectedItemSize="12sp" />
 
     <androidx.appcompat.widget.AppCompatImageButton
         android:id="@+id/reset"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/four"
         android:background="@drawable/rounded_bg"
         android:padding="@dimen/eight"
-        android:layout_marginBottom="@dimen/four"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/moveUp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/ic_refresh" />
 
     <androidx.appcompat.widget.AppCompatImageButton
         android:id="@+id/moveUp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/four"
         android:background="@drawable/rounded_bg"
         android:padding="@dimen/eight"
-        android:layout_marginBottom="@dimen/four"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/moveDown"
+        app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/ic_up" />
 
     <androidx.appcompat.widget.AppCompatImageButton
         android:id="@+id/moveDown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/four"
         android:background="@drawable/rounded_bg"
         android:padding="@dimen/eight"
-        android:layout_marginBottom="@dimen/four"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/search"
+        app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/ic_down" />
 
     <androidx.appcompat.widget.AppCompatImageButton
@@ -77,8 +81,8 @@
         android:layout_height="wrap_content"
         android:background="@drawable/rounded_bg"
         android:padding="@dimen/eight"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/ic_search" />
 
     <com.google.android.material.textfield.TextInputEditText
